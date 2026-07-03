@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { ConnectionContext, WalletContext } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import './App.css';
 
@@ -14,8 +14,13 @@ const DEFAULT_FORKLIFT_ID = 'forklift-001';
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
 function App() {
-  const { connection } = useConnection();
-  const { publicKey, connected, disconnect, signMessage } = useWallet();
+  const connectionContext = useContext(ConnectionContext);
+  const walletContext = useContext(WalletContext);
+  const connection = connectionContext?.connection;
+  const publicKey = walletContext?.publicKey ?? null;
+  const connected = walletContext?.connected ?? false;
+  const disconnect = walletContext?.disconnect;
+  const signMessage = walletContext?.signMessage ?? null;
   const [authState, setAuthState] = useState('Not authenticated');
   const [token, setToken] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<TelemetryEntry[]>([]);
@@ -152,7 +157,7 @@ function App() {
             <button type="button" className="primary" onClick={handleLogin} disabled={loading || !connected}>
               {loading ? 'Signing…' : 'Authorize operator'}
             </button>
-            <button type="button" className="secondary" onClick={() => disconnect().catch(() => undefined)}>
+            <button type="button" className="secondary" onClick={() => disconnect?.().catch(() => undefined)}>
               Disconnect
             </button>
           </div>
@@ -163,7 +168,7 @@ function App() {
         <article className="status-card">
           <h2>Connection state</h2>
           <p>{statusMessage}</p>
-          <p className="meta">RPC: {connection.rpcEndpoint}</p>
+          <p className="meta">RPC: {connection?.rpcEndpoint ?? 'Unavailable'}</p>
         </article>
         <article className="status-card">
           <h2>Telemetry stream</h2>
