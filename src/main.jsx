@@ -1,27 +1,45 @@
-import { StrictMode } from 'react'
+import { StrictMode, Component } from 'react'
 import { createRoot } from 'react-dom/client'
-import { clusterApiUrl } from '@solana/web3.js'
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
-import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
-import '@solana/wallet-adapter-react-ui/styles.css'
 import './index.css'
 import App from './App.tsx'
 
-import { Buffer } from 'buffer'
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
 
-window.Buffer = Buffer
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
 
-const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()]
+  componentDidCatch(error) {
+    console.error('App runtime error:', error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '24px', background: '#0f172a', color: 'white' }}>
+          <div style={{ maxWidth: '480px', textAlign: 'center' }}>
+            <h1>Something went wrong</h1>
+            <p>The dashboard hit a runtime error. Refresh the page to recover.</p>
+            <button onClick={() => window.location.reload()} style={{ marginTop: '12px', padding: '10px 16px', borderRadius: '999px', cursor: 'pointer' }}>
+              Reload page
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ConnectionProvider endpoint={clusterApiUrl('devnet')}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          <App />
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )
