@@ -27,16 +27,21 @@ body {
   gap: 24px;
 }
 
-.hero-panel {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 24px;
-  align-items: start;
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
 }
 
-.hero-panel h1 {
-  margin: 0 0 10px;
-  font-size: 2.4rem;
+.topbar h1 {
+  margin: 0;
+  font-size: 2rem;
   color: white;
 }
 
@@ -45,18 +50,61 @@ body {
   letter-spacing: 0.24em;
   color: #8b5cf6;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin: 0 0 4px;
+}
+
+.menu {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.menu-btn {
+  padding: 10px 14px;
+  background: rgba(148, 163, 184, 0.1);
+  color: #e2e8f0;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.menu-btn.active {
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+  color: white;
+}
+
+.hero-panel {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  align-items: start;
 }
 
 .hero-copy {
   color: #cbd5e1;
   max-width: 640px;
   line-height: 1.6;
+  margin: 0 0 14px;
+  font-size: 1rem;
+}
+
+.summary-strip {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.16);
+  color: #dbeafe;
+  font-size: 0.92rem;
 }
 
 .wallet-card,
 .status-card,
-.controls-panel {
+.controls-panel,
+.telemetry-panel {
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 20px;
@@ -113,13 +161,15 @@ button:hover {
   gap: 24px;
 }
 
-.status-card h2 {
+.status-card h2,
+.telemetry-panel h2 {
   margin-top: 0;
   color: white;
 }
 
 .status-card p,
-.status-card li {
+.status-card li,
+.telemetry-item p {
   color: #cbd5e1;
   line-height: 1.6;
 }
@@ -152,6 +202,39 @@ button:hover {
   box-shadow: 0 15px 35px rgba(239, 68, 68, 0.3);
 }
 
+.telemetry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.telemetry-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.telemetry-status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.telemetry-status.ok {
+  background: rgba(34, 197, 94, 0.16);
+  color: #bbf7d0;
+}
+
+.telemetry-status.pending {
+  background: rgba(250, 204, 21, 0.16);
+  color: #fde68a;
+}
+
 .error-banner {
   color: #fecaca;
   background: rgba(127, 29, 29, 0.4);
@@ -169,6 +252,11 @@ button:hover {
   .hero-panel,
   .status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .dashboard-shell {

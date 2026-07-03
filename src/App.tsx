@@ -22,6 +22,7 @@ function App() {
   const [statusMessage, setStatusMessage] = useState('Awaiting operator auth');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'overview' | 'controls' | 'telemetry'>('overview');
 
   const walletAddress = publicKey?.toBase58() ?? 'Not connected';
   const message = useMemo(
@@ -123,14 +124,47 @@ function App() {
 
   return (
     <main className="dashboard-shell">
-      <section className="hero-panel">
+      <header className="topbar">
         <div>
           <p className="eyebrow">RAID | Industrial IoT</p>
           <h1>Forklift command center</h1>
+        </div>
+        <nav className="menu" aria-label="Primary">
+          <button
+            type="button"
+            className={`menu-btn ${activeView === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveView('overview')}
+          >
+            Overview
+          </button>
+          <button
+            type="button"
+            className={`menu-btn ${activeView === 'controls' ? 'active' : ''}`}
+            onClick={() => setActiveView('controls')}
+          >
+            Controls
+          </button>
+          <button
+            type="button"
+            className={`menu-btn ${activeView === 'telemetry' ? 'active' : ''}`}
+            onClick={() => setActiveView('telemetry')}
+          >
+            Telemetry
+          </button>
+        </nav>
+      </header>
+
+      <section className="hero-panel">
+        <div>
           <p className="hero-copy">
             Authorize an operator wallet, dispatch forklift controls, and capture every command in
             NeonDB-backed telemetry.
           </p>
+          <div className="summary-strip">
+            <span className="status-pill">Mode: {connected ? 'Connected' : 'Offline'}</span>
+            <span className="status-pill">Auth: {authState}</span>
+            <span className="status-pill">Forklift: {DEFAULT_FORKLIFT_ID}</span>
+          </div>
         </div>
         <div className="wallet-card">
           <div className="row-between">
@@ -159,44 +193,77 @@ function App() {
         </div>
       </section>
 
-      <section className="status-grid">
-        <article className="status-card">
-          <h2>Connection state</h2>
-          <p>{statusMessage}</p>
-          <p className="meta">RPC: {connection.rpcEndpoint}</p>
-        </article>
-        <article className="status-card">
-          <h2>Telemetry stream</h2>
-          <ul>
-            {telemetry.slice(0, 5).map((entry) => (
-              <li key={entry.id}>
-                {entry.commandSent} • {entry.success ? 'Delivered' : 'Pending'} •{' '}
-                {new Date(entry.timestamp).toLocaleTimeString()}
-              </li>
-            ))}
-          </ul>
-        </article>
-      </section>
+      {activeView === 'overview' ? (
+        <section className="status-grid">
+          <article className="status-card">
+            <h2>Connection state</h2>
+            <p>{statusMessage}</p>
+            <p className="meta">RPC: {connection.rpcEndpoint}</p>
+          </article>
+          <article className="status-card">
+            <h2>Telemetry stream</h2>
+            <ul>
+              {telemetry.slice(0, 5).map((entry) => (
+                <li key={entry.id}>
+                  {entry.commandSent} • {entry.success ? 'Delivered' : 'Pending'} •{' '}
+                  {new Date(entry.timestamp).toLocaleTimeString()}
+                </li>
+              ))}
+            </ul>
+          </article>
+        </section>
+      ) : null}
 
-      <section className="controls-panel">
-        <div className="controls-grid">
-          <button type="button" className="control-btn" onClick={() => void sendCommand('FORWARD')}>
-            FORWARD
+      {activeView === 'controls' ? (
+        <section className="controls-panel">
+          <div className="controls-grid">
+            <button type="button" className="control-btn" onClick={() => void sendCommand('FORWARD')}>
+              FORWARD
+            </button>
+            <button type="button" className="control-btn" onClick={() => void sendCommand('REVERSE')}>
+              REVERSE
+            </button>
+            <button type="button" className="control-btn" onClick={() => void sendCommand('LEFT')}>
+              LEFT
+            </button>
+            <button type="button" className="control-btn" onClick={() => void sendCommand('RIGHT')}>
+              RIGHT
+            </button>
+            <button type="button" className="control-btn" onClick={() => void sendCommand('LIFT')}>
+              LIFT
+            </button>
+            <button type="button" className="control-btn" onClick={() => void sendCommand('LOWER')}>
+              LOWER
+            </button>
+          </div>
+          <button type="button" className="emergency" onClick={() => void sendCommand('STOP')}>
+            EMERGENCY STOP
           </button>
-          <button type="button" className="control-btn" onClick={() => void sendCommand('REVERSE')}>
-            REVERSE
-          </button>
-          <button type="button" className="control-btn" onClick={() => void sendCommand('LIFT')}>
-            LIFT
-          </button>
-          <button type="button" className="control-btn" onClick={() => void sendCommand('LOWER')}>
-            LOWER
-          </button>
-        </div>
-        <button type="button" className="emergency" onClick={() => void sendCommand('STOP')}>
-          EMERGENCY STOP
-        </button>
-      </section>
+        </section>
+      ) : null}
+
+      {activeView === 'telemetry' ? (
+        <section className="telemetry-panel">
+          <h2>Recent activity</h2>
+          <div className="telemetry-list">
+            {telemetry.length === 0 ? (
+              <p className="meta">No telemetry yet. Dispatch a command to begin logging.</p>
+            ) : (
+              telemetry.slice(0, 10).map((entry) => (
+                <article key={entry.id} className="telemetry-item">
+                  <div>
+                    <strong>{entry.commandSent}</strong>
+                    <p>{new Date(entry.timestamp).toLocaleString()}</p>
+                  </div>
+                  <span className={`telemetry-status ${entry.success ? 'ok' : 'pending'}`}>
+                    {entry.success ? 'Delivered' : 'Pending'}
+                  </span>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+      ) : null}
 
       {error ? <p className="error-banner">{error}</p> : null}
     </main>
