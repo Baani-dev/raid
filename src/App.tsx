@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import './App.css';
 
 type TelemetryEntry = {
@@ -12,17 +14,16 @@ const DEFAULT_FORKLIFT_ID = 'forklift-001';
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
 function App() {
-  const [connected, setConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('Not connected');
+  const { connection } = useConnection();
+  const { publicKey, connected, disconnect, signMessage } = useWallet();
   const [authState, setAuthState] = useState('Not authenticated');
   const [token, setToken] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<TelemetryEntry[]>([]);
   const [statusMessage, setStatusMessage] = useState('Awaiting operator auth');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<'overview' | 'controls' | 'telemetry'>('overview');
-  const [backendStatus, setBackendStatus] = useState('Checking backend');
 
+  const walletAddress = publicKey?.toBase58() ?? 'Not connected';
   const message = useMemo(
     () => `Authorize RAID forklift control at ${new Date().toISOString()}`,
     [connected],
@@ -36,11 +37,8 @@ function App() {
       }
       const data = (await response.json()) as TelemetryEntry[];
       setTelemetry(data);
-      setBackendStatus('Backend connected');
     } catch (err) {
       console.error(err);
-      setBackendStatus('Backend unavailable');
-      setError('Backend unavailable. Start the Express server or point VITE_API_URL to the correct endpoint.');
     }
   };
 
@@ -49,8 +47,8 @@ function App() {
   }, []);
 
   const handleLogin = async () => {
-    if (!connected) {
-      setError('Connect a wallet first');
+    if (!publicKey || !signMessage) {
+      setError('Connect a Solana wallet first');
       return;
     }
 
@@ -58,13 +56,17 @@ function App() {
     setError(null);
 
     try {
+      const encodedMessage = new TextEncoder().encode(message);
+      const signatureResult = await signMessage(encodedMessage);
+      const signature = Buffer.from(signatureResult).toString('base64');
+
       const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          walletAddress,
+          walletAddress: publicKey.toBase58(),
           message,
-          signature: 'demo-signature',
+          signature,
         }),
       });
 
@@ -121,60 +123,19 @@ function App() {
 
   return (
     <main className="dashboard-shell">
-      <header className="topbar">
+      <section className="hero-panel">
         <div>
           <p className="eyebrow">RAID | Industrial IoT</p>
           <h1>Forklift command center</h1>
-        </div>
-        <nav className="menu" aria-label="Primary">
-          <button
-            type="button"
-            className={`menu-btn ${activeView === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveView('overview')}
-          >
-            Overview
-          </button>
-          <button
-            type="button"
-            className={`menu-btn ${activeView === 'controls' ? 'active' : ''}`}
-            onClick={() => setActiveView('controls')}
-          >
-            Controls
-          </button>
-          <button
-            type="button"
-            className={`menu-btn ${activeView === 'telemetry' ? 'active' : ''}`}
-            onClick={() => setActiveView('telemetry')}
-          >
-            Telemetry
-          </button>
-        </nav>
-      </header>
-
-      <section className="hero-panel">
-        <div>
           <p className="hero-copy">
             Authorize an operator wallet, dispatch forklift controls, and capture every command in
             NeonDB-backed telemetry.
           </p>
-          <div className="summary-strip">
-            <span className="status-pill">Mode: {connected ? 'Connected' : 'Offline'}</span>
-            <span className="status-pill">Auth: {authState}</span>
-            <span className="status-pill">Forklift: {DEFAULT_FORKLIFT_ID}</span>
-            <span className="status-pill">{backendStatus}</span>
-          </div>
         </div>
         <div className="wallet-card">
           <div className="row-between">
-            <span>Wallet</span>
-            <button type="button" className="secondary" onClick={() => {
-              setConnected(true)
-              setWalletAddress('demo-wallet')
-              setAuthState('Wallet ready')
-              setStatusMessage('Demo wallet connected. Backend auth can be tested when the API is running.')
-            }}>
-              Connect wallet
-            </button>
+            <span>Solana wallet</span>
+            <WalletMultiButton />
           </div>
           <div className="wallet-details">
             <p>
@@ -191,89 +152,57 @@ function App() {
             <button type="button" className="primary" onClick={handleLogin} disabled={loading || !connected}>
               {loading ? 'Signing…' : 'Authorize operator'}
             </button>
-            <button type="button" className="secondary" onClick={() => {
-              setConnected(false)
-              setWalletAddress('Not connected')
-              setAuthState('Not authenticated')
-              setStatusMessage('Wallet disconnected')
-            }}>
+            <button type="button" className="secondary" onClick={() => disconnect().catch(() => undefined)}>
               Disconnect
             </button>
           </div>
         </div>
       </section>
 
-      {activeView === 'overview' ? (
-        <section className="status-grid">
-          <article className="status-card">
-            <h2>Connection state</h2>
-            <p>{statusMessage}</p>
-            <p className="meta">RPC: https://api.devnet.solana.com</p>
-          </article>
-          <article className="status-card">
-            <h2>Telemetry stream</h2>
-            <ul>
-              {telemetry.slice(0, 5).map((entry) => (
-                <li key={entry.id}>
-                  {entry.commandSent} • {entry.success ? 'Delivered' : 'Pending'} •{' '}
-                  {new Date(entry.timestamp).toLocaleTimeString()}
-                </li>
-              ))}
-            </ul>
-          </article>
-        </section>
-      ) : null}
+      <section className="status-grid">
+        <article className="status-card">
+          <h2>Connection state</h2>
+          <p>{statusMessage}</p>
+          <p className="meta">RPC: {connection.rpcEndpoint}</p>
+        </article>
+        <article className="status-card">
+          <h2>Telemetry stream</h2>
+          <ul>
+            {telemetry.slice(0, 5).map((entry) => (
+              <li key={entry.id}>
+                {entry.commandSent} • {entry.success ? 'Delivered' : 'Pending'} •{' '}
+                {new Date(entry.timestamp).toLocaleTimeString()}
+              </li>
+            ))}
+          </ul>
+        </article>
+      </section>
 
-      {activeView === 'controls' ? (
-        <section className="controls-panel">
-          <div className="controls-grid">
-            <button type="button" className="control-btn" onClick={() => void sendCommand('FORWARD')}>
-              FORWARD
-            </button>
-            <button type="button" className="control-btn" onClick={() => void sendCommand('REVERSE')}>
-              REVERSE
-            </button>
-            <button type="button" className="control-btn" onClick={() => void sendCommand('LEFT')}>
-              LEFT
-            </button>
-            <button type="button" className="control-btn" onClick={() => void sendCommand('RIGHT')}>
-              RIGHT
-            </button>
-            <button type="button" className="control-btn" onClick={() => void sendCommand('LIFT')}>
-              LIFT
-            </button>
-            <button type="button" className="control-btn" onClick={() => void sendCommand('LOWER')}>
-              LOWER
-            </button>
-          </div>
-          <button type="button" className="emergency" onClick={() => void sendCommand('STOP')}>
-            EMERGENCY STOP
+      <section className="controls-panel">
+        <div className="controls-grid">
+          <button type="button" className="control-btn" onClick={() => void sendCommand('FORWARD')}>
+            FORWARD
           </button>
-        </section>
-      ) : null}
-
-      {activeView === 'telemetry' ? (
-        <section className="telemetry-panel">
-          <h2>Recent activity</h2>
-          <div className="telemetry-list">
-            {telemetry.length === 0 ? (
-              <p className="meta">No telemetry yet. Dispatch a command to begin logging.</p>
-            ) : (
-              telemetry.slice(0, 10).map((entry) => (
-                <article key={entry.id} className="telemetry-item">
-                  <div>
-                    <strong>{entry.commandSent}</strong>
-                    <p>{new Date(entry.timestamp).toLocaleString()}</p>
-                  </div>
-                  <span className={`telemetry-status ${entry.success ? 'ok' : 'pending'}`}>
-                    {entry.success ? 'Delivered' : 'Pending'}
-                  </span>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
-      ) : null}
+          <button type="button" className="control-btn" onClick={() => void sendCommand('REVERSE')}>
+            REVERSE
+          </button>
+          <button type="button" className="control-btn" onClick={() => void sendCommand('LEFT')}>
+            LEFT
+          </button>
+          <button type="button" className="control-btn" onClick={() => void sendCommand('RIGHT')}>
+            RIGHT
+          </button>
+          <button type="button" className="control-btn" onClick={() => void sendCommand('LIFT')}>
+            LIFT
+          </button>
+          <button type="button" className="control-btn" onClick={() => void sendCommand('LOWER')}>
+            LOWER
+          </button>
+        </div>
+        <button type="button" className="emergency" onClick={() => void sendCommand('STOP')}>
+          EMERGENCY STOP
+        </button>
+      </section>
 
       {error ? <p className="error-banner">{error}</p> : null}
     </main>
