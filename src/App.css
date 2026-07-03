@@ -1,0 +1,177 @@
+:root {
+  color: #f5f7fa;
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.dashboard-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hero-panel {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.hero-panel h1 {
+  margin: 0 0 10px;
+  font-size: 2.4rem;
+  color: white;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: #8b5cf6;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.hero-copy {
+  color: #cbd5e1;
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+.wallet-card,
+.status-card,
+.controls-panel {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 20px 55px rgba(2, 8, 23, 0.3);
+}
+
+.wallet-details {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+  color: #e2e8f0;
+}
+
+.row-between,
+.actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.actions-row {
+  margin-top: 16px;
+}
+
+button {
+  border: none;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+  color: white;
+  padding: 10px 16px;
+}
+
+.secondary {
+  background: rgba(148, 163, 184, 0.15);
+  color: #f8fafc;
+  padding: 10px 16px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.status-card h2 {
+  margin-top: 0;
+  color: white;
+}
+
+.status-card p,
+.status-card li {
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.controls-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.control-btn {
+  background: #111827;
+  color: white;
+  padding: 18px 10px;
+  font-size: 1rem;
+  border: 1px solid rgba(129, 140, 248, 0.35);
+}
+
+.emergency {
+  padding: 16px;
+  font-size: 1.05rem;
+  color: white;
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+  box-shadow: 0 15px 35px rgba(239, 68, 68, 0.3);
+}
+
+.error-banner {
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.4);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.meta {
+  font-size: 0.92rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 860px) {
+  .hero-panel,
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-shell {
+    padding: 20px;
+  }
+}

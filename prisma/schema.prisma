@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OPERATOR
+  ADMIN
+}
+
+enum ForkliftStatus {
+  IDLE
+  ACTIVE
+  MAINTENANCE
+}
+
+enum CommandType {
+  FORWARD
+  REVERSE
+  LIFT
+  LOWER
+  STOP
+}
+
+model User {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  role          UserRole @default(OPERATOR)
+  createdAt     DateTime @default(now())
+
+  operatedForklifts Forklift[]      @relation("ForkliftOperator")
+  telemetryLogs     TelemetryLog[]  @relation("TelemetryOperator")
+}
+
+model Forklift {
+  id                String          @id @default(cuid())
+  status            ForkliftStatus  @default(IDLE)
+  currentOperatorId String?
+  currentOperator   User?           @relation("ForkliftOperator", fields: [currentOperatorId], references: [id])
+
+  telemetryLogs     TelemetryLog[]
+}
+
+model TelemetryLog {
+  id            String      @id @default(cuid())
+  forkliftId    String
+  operatorId    String?
+  commandSent   CommandType
+  success       Boolean
+  timestamp     DateTime    @default(now())
+
+  forklift      Forklift    @relation(fields: [forkliftId], references: [id])
+  operator      User?       @relation("TelemetryOperator", fields: [operatorId], references: [id])
+}
